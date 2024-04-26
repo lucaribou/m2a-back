@@ -23,7 +23,7 @@ export class AppController {
   @UseInterceptors(
     FileInterceptor('file', {
       storage: diskStorage({
-        destination: './uploads',
+        destination: '/app/uploads-volume',
         filename: (req, file, cb) => {
           return cb(null, `${file.originalname}`);
         },
@@ -36,7 +36,7 @@ export class AppController {
 
   @Get('files')
   async getFiles(): Promise<string[]> {
-    const directoryPath = './uploads'; // Remplacez cela par le chemin de votre dossier
+    const directoryPath = '/app/uploads-volume'; // Remplacez cela par le chemin de votre dossier
     try {
       const files = await fs.promises.readdir(directoryPath);
       console.log(files);

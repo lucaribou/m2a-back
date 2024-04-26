@@ -1,0 +1,26 @@
+---
+version: '3'
+services:
+  frontend:
+    image: devcloud/front
+    build: ./front-test
+    ports:
+      - 8080:80
+
+  backend:
+    image: devcloud/back
+    build: ./back-test
+    volumes:
+      - backendfiles:/app/uploads-volume
+    ports:
+      - 3000:3000
+
+  second-backend:
+    image: devcloud/back
+    volumes:
+      - backendfiles:/app/uploads-volume
+    ports:
+      - 3001:3000
+
+volumes:
+  backendfiles:
