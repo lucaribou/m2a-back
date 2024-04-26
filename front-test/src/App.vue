@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import HelloWorld from './components/HelloWorld.vue'
-import { reactive, ref } from "vue";
+import { ref } from "vue";
 import axios from "axios";
 
 const file = ref<File | null>(null);
@@ -33,7 +32,10 @@ const submitFile = async () => {
 
 const fetchFile = async () => {
   try {
-    const res = await axios.get("http://localhost:3000/files");
+    const backends = ["http://localhost:3000/files", "http://localhost:3001/files"];
+    const randomIndex = Math.floor(Math.random() * backends.length);
+
+    const res = await axios.get(backends[randomIndex]);
     console.log(res.data);
     listFiles.value = res.data;
   } catch (error) {
