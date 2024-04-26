@@ -1,5 +1,4 @@
-# Dockerfile
-FROM docker.io/node:18-alpine3.18 as build
+FROM node:18 As build
 
 WORKDIR /app
 
@@ -9,4 +8,16 @@ RUN npm install
 COPY . .
 RUN npm run build
 
-CMD ["npm", "run", "start:prod"]
+RUN npm i --only=production && npm cache clean --force
+
+USER node 
+
+
+ENV NODE_ENV production
+FROM node:18-alpine As production
+WORKDIR /app
+
+COPY --chown=node:node --from=build /app/node_modules ./node_modules
+COPY --chown=node:node --from=build /app/dist ./dist
+
+CMD [ "node", "dist/main.js" ]
