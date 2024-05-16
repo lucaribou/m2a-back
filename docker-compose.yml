@@ -2,12 +2,11 @@
 version: '3'
 services:
   backend:
-    image: devcloud/back
-    build: .
+    image: ghcr.io/lucaribou/m2a-back:${IMAGE_TAG}
     volumes:
       - backendfiles:/app/uploads-volume
     ports:
       - 3000:3000
-      
+
 volumes:
   backendfiles:
