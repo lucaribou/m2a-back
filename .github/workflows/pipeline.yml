@@ -48,30 +48,57 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
   deploy:
+    environment: 
+      name: production
     needs: build-and-push-image
-    runs-on: ubuntu-latest
     permissions:
+      actions: read
       contents: read
-      packages: read
+      id-token: write
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: create env file
+      # Checks out the repository this file is in
+      - uses: actions/checkout@v4
+
+      # Logs in with your Azure credentials
+      - name: Azure login
+        uses: azure/login@v1.4.6
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      # Use kubelogin to configure your kubeconfig for Azure auth
+      - name: Set up kubelogin for non-interactive login
+        uses: azure/use-kubelogin@v1
+        with:
+          kubelogin-version: 'v0.0.25'
+
+      # Retrieves your Azure Kubernetes Service cluster's kubeconfig file
+      - name: Get K8s context
+        uses: azure/aks-set-context@v3
+        with:
+          resource-group: ${{ env.RESOURCE_GROUP }}
+          cluster-name: ${{ env.CLUSTER_NAME }}
+          admin: 'false'
+          use-kubelogin: 'true'
+      
+      - name: Set image name
         run: |
-          touch .env
-          echo IMAGE_TAG=${{ github.ref_name }} >> .env
-      - name: copy files via ssh key
-        uses: appleboy/scp-action@v0.1.7
+          echo "image_name=${{ env.REGISTRY }}/${{ env.REPOSITORY_NAME }}:${{ github.ref_name }}" >> $GITHUB_ENV
+          echo "docker_username=${{ secrets.REGISTRY_USERNAME }}" >> $GITHUB_ENV
+          echo "docker_password=${{ secrets.REGISTRY_TOKEN }}" >> $GITHUB_ENV
+          echo "docker_email=${{ secrets.REGISTRY_USER_EMAIL }}" >> $GITHUB_ENV
+          
+      - name: Render k8s manifests
+        run: envsubst < .kubernetes/01-service.yml > .kubernetes/01-service.tmp && mv .kubernetes/01-service.tmp .kubernetes/01-service.yml
+
+
+      # Deploys application based on given manifest file
+      - name: Deploys application
+        uses: Azure/k8s-deploy@v5
         with:
-          host: ${{ secrets.VM_HOST }}
-          username: ${{ secrets.VM_USERNAME }}
-          key: ${{ secrets.SSH_KEY_PRIVATE }}
-          source: "docker-compose.yml,.env"
-          target: /home/${{ secrets.VM_USERNAME }}/
-      - name: executing remote ssh commands
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.VM_HOST }}
-          username: ${{ secrets.VM_USERNAME }}
-          key: ${{ secrets.SSH_KEY_PRIVATE }}
-          script: docker compose up -d
+          action: deploy
+          namespace: m2a-backend
+          manifests: |
+            .kubernetes

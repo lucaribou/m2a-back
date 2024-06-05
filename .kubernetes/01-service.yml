@@ -1,0 +1,59 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: secret-dockerconfigjson
+type: kubernetes.io/dockerconfigjson
+stringData:
+  .dockerconfigjson: |
+    {
+      "auths": {
+        "ghcr.io": {
+          "username": "$docker_username",
+          "password": "$docker_password",
+          "email": "$docker_email"
+        }
+      }
+    }
+
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  namespace: m2a-backend
+  name: m2a-backend
+  labels:
+    app: m2a-backend
+
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: m2a-backend
+  template:
+    metadata:
+      labels:
+        app: m2a-backend
+    spec:
+      containers:
+        - name: m2a-backend
+          image: $image_name
+          ports:
+            - name: web
+              containerPort: 80
+      imagePullSecrets:
+        - name: secret-dockerconfigjson
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: m2a-backend
+  name: m2a-backend
+
+spec:
+  ports:
+    - name: web
+      port: 80
+      targetPort: web
+
+  selector:
+    app: m2a-backend
