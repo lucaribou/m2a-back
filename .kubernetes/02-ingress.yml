@@ -4,8 +4,6 @@ metadata:
   name: m2a-backend-ingress
   namespace: m2a-backend
   annotations:
-    traefik.ingress.kubernetes.io/router.entrypoints: websecure
-    traefik.ingress.kubernetes.io/router.tls: "true"
     cert-manager.io/issuer: "m2a-backend-http"
 spec:
   tls:
