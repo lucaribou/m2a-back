@@ -3,13 +3,18 @@ kind: Ingress
 metadata:
   name: m2a-backend-ingress
   namespace: m2a-backend
-
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
 spec:
+  tls:
+    - hosts:
+        - m2a-back.jaipasraisonla.team
+      secretName: tls-m2a-back-ingress-http
   rules:
-    - host: m2a.jaipasraisonla.team
+    - host: m2a-back.jaipasraisonla.team
       http:
         paths:
-          - path: /back
+          - path: /
             pathType: Prefix
             backend:
               service:
