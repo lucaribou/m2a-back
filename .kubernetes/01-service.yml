@@ -40,8 +40,16 @@ spec:
           ports:
             - name: web
               containerPort: 80
+          volumeMounts:
+            - mountPath: "/app/uploads-volume"
+              name: volume
+              readOnly: false
       imagePullSecrets:
         - name: secret-dockerconfigjson
+      volumes:
+        - name: volume
+          persistentVolumeClaim:
+            claimName: azure-managed-disk
 ---
 apiVersion: v1
 kind: Service
